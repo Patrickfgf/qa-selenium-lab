@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Test artifacts (generated on every run; CI uploads them as artifacts)
+reports/
+screenshots/
+
+# Local secrets and editor/OS noise
+.env
+.DS_Store
+.idea/
+.vscode/
