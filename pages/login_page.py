@@ -2,24 +2,20 @@ from typing import Self
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
 
+from pages.base_page import TIMEOUT, BasePage
 from pages.inventory_page import InventoryPage
 
-TIMEOUT = 10
 
-
-class LoginPage:
+class LoginPage(BasePage):
     USERNAME = (By.CSS_SELECTOR, '[data-test="username"]')
     PASSWORD = (By.CSS_SELECTOR, '[data-test="password"]')
     LOGIN_BUTTON = (By.CSS_SELECTOR, '[data-test="login-button"]')
     ERROR = (By.CSS_SELECTOR, '[data-test="error"]')
 
     def __init__(self, driver: WebDriver) -> None:
-        self.driver = driver
-        self.wait = WebDriverWait(driver, TIMEOUT)
-        self.wait.until(EC.visibility_of_element_located(self.USERNAME))
+        super().__init__(driver)
+        self._visible(self.USERNAME)
 
     @classmethod
     def open(cls, driver: WebDriver, base_url: str) -> Self:
@@ -35,7 +31,7 @@ class LoginPage:
         return self
 
     def error_message(self) -> str:
-        return self.wait.until(EC.visibility_of_element_located(self.ERROR)).text
+        return self._visible(self.ERROR).text
 
     def _submit(self, username: str, password: str) -> None:
         self.driver.find_element(*self.USERNAME).send_keys(username)

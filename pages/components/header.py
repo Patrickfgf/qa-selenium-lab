@@ -1,12 +1,9 @@
 from selenium.webdriver.common.by import By
-from selenium.webdriver.remote.webdriver import WebDriver
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
 
-TIMEOUT = 10
+from pages.base_page import BasePage
 
 
-class Header:
+class Header(BasePage):
     """Top bar shared by every page after login: cart badge, cart link and side menu."""
 
     CART_BADGE = (By.CSS_SELECTOR, '[data-test="shopping-cart-badge"]')
@@ -14,10 +11,6 @@ class Header:
     # ("element click intercepted"); the button's own id is stable, so it is the target.
     MENU_BUTTON = (By.ID, "react-burger-menu-btn")
     LOGOUT_LINK = (By.CSS_SELECTOR, '[data-test="logout-sidebar-link"]')
-
-    def __init__(self, driver: WebDriver) -> None:
-        self.driver = driver
-        self.wait = WebDriverWait(driver, TIMEOUT)
 
     def cart_count(self) -> int:
         badges = self.driver.find_elements(*self.CART_BADGE)
@@ -28,6 +21,6 @@ class Header:
         # Imported here: LoginPage leads to InventoryPage, which has a Header (circular import).
         from pages.login_page import LoginPage
 
-        self.wait.until(EC.element_to_be_clickable(self.MENU_BUTTON)).click()
-        self.wait.until(EC.element_to_be_clickable(self.LOGOUT_LINK)).click()
+        self._click(self.MENU_BUTTON)
+        self._click(self.LOGOUT_LINK)
         return LoginPage(self.driver)
