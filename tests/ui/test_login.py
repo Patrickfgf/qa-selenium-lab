@@ -21,7 +21,7 @@ def test_standard_user_logs_in_and_sees_products(driver, base_url):
     # The URL changes before React finishes rendering, so wait on the page content, not the route.
     title = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '[data-test="title"]')))
     assert driver.current_url == f"{base_url}/inventory.html"
-    assert title.text == "Produtos"
+    assert title.text == "Products"
     assert driver.find_elements(By.CSS_SELECTOR, '[data-test="inventory-item"]')
 
 
