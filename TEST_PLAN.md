@@ -42,9 +42,9 @@ Não há especificação do Sauce Demo: os comportamentos da interface foram **i
 
 - **Tabela de decisão no login** (usuário × senha). Coberto: válido + senha certa (01), bloqueado + senha certa (02), válido + senha errada (03), usuário inexistente (04), senha vazia (05), usuário vazio (06), os dois vazios (07) e bloqueado + senha errada (08). O caso 08 mostra que o app confere a senha antes de revelar o bloqueio, então não dá para descobrir quais contas existem. Ficaram de fora usuário com maiúsculas (o app trata como inexistente, o mesmo resultado do 04) e espaços antes ou depois do usuário.
 - **Partição na API de login:** credencial válida, credencial errada, e-mail inexistente (mesma resposta da senha errada, para não revelar quais e-mails existem), campo vazio e e-mail malformado.
-- **Partição de equivalência no checkout:** cada campo tem três classes (vazio, só espaços, preenchido). O formulário valida na ordem nome, sobrenome e CEP, então cada linha deixa vazio o próximo campo obrigatório. A classe "só espaços" revelou o BUG-001.
+- **Partição de equivalência no checkout:** cada campo tem três classes (vazio, só espaços, preenchido). O formulário valida na ordem nome, sobrenome e CEP, então cada linha deixa vazio o próximo campo obrigatório. A classe "só espaços" é a que reproduz o BUG-001.
 - **Valor-limite:** não se aplica aqui. Os campos não declaram tamanho mínimo nem máximo, e eu não invento um limite só para testá-lo.
-- **Oráculo independente:** o resultado esperado não sai do próprio app. A ordenação é conferida com `sorted()` do Python sobre o que a página mostra; o total, somando em `Decimal` os preços exibidos. Foi esse oráculo que achou o BUG-002.
+- **Oráculo independente:** o resultado esperado não sai do próprio app. A ordenação é conferida com `sorted()` do Python sobre o que a página mostra; o total, somando em `Decimal` os preços exibidos. É esse oráculo que pega o BUG-002.
 
 ## Rastreabilidade
 
@@ -55,7 +55,7 @@ Não há especificação do Sauce Demo: os comportamentos da interface foram **i
 | C-LOGIN | lentidão | `test_login.py::test_performance_glitch_user_gets_in_with_a_longer_wait` | automatizado |
 | C-SESSION | logout | `test_login.py::test_log_out_ends_the_session` | automatizado |
 | C-SORT | TC-SORT-01 a 04 | `test_inventory.py::test_sort_orders_products` | automatizado |
-| C-SORT | BUG-004 | `test_inventory.py::test_error_user_sorts_without_an_error_alert` | automatizado (xfail) |
+| C-SORT | BUG-004 | `test_inventory.py::test_error_user_sorts_products_without_an_error` | automatizado (xfail) |
 | C-CART | BUG-003 | `test_inventory.py::test_problem_user_adds_any_product_to_cart` | automatizado (xfail) |
 | C-CART, C-CHECKOUT-TOTAL | compra | `test_checkout.py::test_standard_user_buys_two_products` | automatizado |
 | C-CHECKOUT-INFO | TC-CHK-01 a 04 | `test_checkout.py::test_checkout_info_requires_each_field` | automatizado (04 é xfail, BUG-001) |
@@ -70,7 +70,7 @@ Não há especificação do Sauce Demo: os comportamentos da interface foram **i
 ## O que fica manual, e por quê
 
 - **Aparência (`visual_user`, imagens do `problem_user`):** na exploração, o `problem_user` mostra a mesma foto em todos os produtos e o `visual_user` mostra o catálogo com outros preços. Conferir se uma tela "está certa" visualmente pede julgamento humano ou uma ferramenta de comparação de imagens. Automatizar isso com asserções de atributo geraria teste frágil para pouco ganho neste tamanho de projeto.
-- **Exploratório:** é de onde saíram os quatro bugs. Uma sessão curta com cada usuário especial, anotando o que pareceu errado, vem antes de qualquer automação.
+- **Exploratório:** os quatro bugs da interface apareceram em sessões curtas de exploração com cada usuário. As técnicas acima transformaram cada um num caso de teste repetível. Exploração vem antes da automação, não no lugar dela.
 - **Leitor de tela, teclado e celular:** dependem de dispositivo e de percepção. Verificações automáticas de acessibilidade cobrem só parte das regras.
 
 ## Triagem de falha: defeito ou instabilidade?
@@ -87,6 +87,7 @@ Casos reais desta suíte:
 
 - Um script exploratório com `time.sleep(0.3)` indicou que o `standard_user` não conseguia pôr produtos no carrinho. Com espera explícita pelo botão "Remove", 6 de 6 produtos entraram, em duas rodadas. O problema era o script, não o site.
 - O clique no menu falhou 3 de 3 vezes com `ElementClickInterceptedException`. Falha determinística aponta para o teste, e era o localizador: o `data-test` estava no ícone, e não no botão que recebe o clique.
+- O BUG-003 foi registrado primeiro como "4 dos 6 produtos". Reproduzindo com uma sessão nova por produto, eram 3: o Onesie só falhava depois de outras tentativas na mesma sessão. Lição: o resultado de um passo pode depender do estado deixado pelos anteriores, então a reprodução de um bug começa do zero.
 - Apareceu um screenshot de um teste que estava passando. Era evidência de uma execução anterior. A suíte passou a limpar `screenshots/` no início de cada execução.
 
 ## Critérios de entrada e de saída

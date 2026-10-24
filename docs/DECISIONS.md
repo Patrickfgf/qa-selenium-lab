@@ -11,9 +11,9 @@ Registro curto das escolhas que mudam como a suíte se comporta. Cada uma traz a
 
 ## 2. Só espera explícita, sem espera implícita
 
-- **Decisão:** toda espera é `WebDriverWait` com uma condição (`visibility_of_element_located`, `url_contains`...). A espera implícita fica no padrão do Selenium, que é zero, e nenhum `time.sleep`.
+- **Decisão:** toda espera é `WebDriverWait` com uma condição (`visibility_of_element_located`, `element_to_be_clickable`, `alert_is_present`). A espera implícita fica no padrão do Selenium, que é zero, e nenhum `time.sleep`.
 - **Alternativa descartada:** `driver.implicitly_wait(10)` global.
-- **Por quê:** a documentação do Selenium recomenda não misturar as duas, porque os tempos se somam de forma imprevisível. A espera explícita também documenta *pelo que* o teste espera. Exemplo real, visto ao explorar o site antes de escrever os testes: depois do login, a URL muda antes de o React terminar de desenhar a página, e ler os elementos logo depois de esperar só pela URL deu `StaleElementReferenceException`. Por isso o teste espera o título da página nova.
+- **Por quê:** a documentação do Selenium recomenda não misturar as duas, porque os tempos se somam de forma imprevisível. A espera explícita também documenta *pelo que* o teste espera. Exemplo real, visto ao explorar o site antes de escrever os testes: depois do login, a URL muda antes de o React terminar de desenhar a página, e ler os elementos logo depois de esperar só pela URL deu `StaleElementReferenceException`. Por isso o Page Object do catálogo espera o contêiner da lista (`inventory-container`) e não a URL.
 - **Quando mudaria:** não vejo cenário nesta suíte. O que muda é o timeout de um fluxo específico, sempre numa constante com nome.
 
 ## 3. Navegador novo por teste, sem nova tentativa automática
@@ -47,7 +47,7 @@ Registro curto das escolhas que mudam como a suíte se comporta. Cada uma traz a
 
 - **Decisão:** todo preço lido da página vira `Decimal`. O teste de compra confere que o item total é a soma dos preços listados e que o total é item total mais taxa. A taxa não é recalculada, porque o percentual não aparece em lugar nenhum.
 - **Alternativa descartada:** `float`, ou números fixos copiados da tela no dia em que o teste foi escrito.
-- **Por quê:** somas em `float` erram: os cinco preços do BUG-002 somam 99.94999999999999 em `float`, e é exatamente esse valor que o site mostra. Número fixo quebraria a cada mudança de preço e não diria de onde vem o valor esperado.
+- **Por quê:** somas em `float` erram: somados um a um em `float`, os cinco preços do BUG-002 dão 99.94999999999999, exatamente o valor que o site mostra. (O `sum()` do Python 3.12+ compensa o erro e daria 99.95; o `Decimal` não depende disso.) Número fixo quebraria a cada mudança de preço e não diria de onde vem o valor esperado.
 
 ## 8. Bug conhecido como `xfail(strict=True, raises=...)`
 

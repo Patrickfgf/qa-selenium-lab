@@ -11,7 +11,7 @@ O [Sauce Demo](https://www.saucedemo.com/) e o [ServeRest](https://serverest.dev
 |---|---|---|---|
 | BUG-001 | Checkout aceita nome, sobrenome e CEP só com espaços | Média | Média |
 | BUG-002 | "Item total" do checkout aparece com erro de ponto flutuante | Baixa | Alta |
-| BUG-003 | "Add to cart" não faz nada em 4 dos 6 produtos (`problem_user`) | Alta | Alta |
+| BUG-003 | "Add to cart" não funciona em 3 dos 6 produtos (`problem_user`) | Alta | Alta |
 | BUG-004 | Ordenar o catálogo abre um alerta de erro e não ordena (`error_user`) | Média | Média |
 | BUG-005 | API: a lista de usuários expõe a senha de todos, sem autenticação | Crítica | Alta |
 
@@ -41,20 +41,21 @@ O [Sauce Demo](https://www.saucedemo.com/) e o [ServeRest](https://serverest.dev
   3. Abrir o carrinho, clicar em **Checkout**, preencher dados válidos e clicar em **Continue**.
 - **Esperado:** "Item total: $99.95", a soma dos preços listados (9.99 + 15.99 + 49.99 + 7.99 + 15.99).
 - **Obtido:** "Item total: $99.94999999999999". Na mesma tela, "Tax: $8.00" e "Total: $107.95" aparecem arredondados.
-- **Causa provável:** a soma é feita em ponto flutuante e exibida sem arredondar. A mesma soma em `float` no Python dá exatamente 99.94999999999999.
+- **Causa provável:** a soma é feita em ponto flutuante e exibida sem arredondar. Somando os preços um a um em `float`, na ordem do carrinho, o resultado é exatamente 99.94999999999999. No Python, isso vale para `+` em sequência: o `sum()` do Python 3.12+ usa soma compensada e devolve 99.95.
 - **Severidade:** baixa. O total cobrado está certo.
 - **Prioridade:** alta. Um valor estranho na tela de pagamento derruba a confiança do cliente, e a correção é pequena.
 - **Evidência:** HTML da página (o subtotal fica abaixo da área visível do screenshot).
 - **Teste:** `tests/ui/test_checkout.py::test_item_total_adds_up_five_products`
 
-## BUG-003: "Add to cart" não faz nada em 4 dos 6 produtos (`problem_user`)
+## BUG-003: "Add to cart" não funciona em 3 dos 6 produtos (`problem_user`)
 
 - **Usuário:** `problem_user`. O `error_user` tem o mesmo comportamento.
 - **Passos:**
   1. Entrar como `problem_user`.
   2. Clicar em **Add to cart** no "Sauce Labs Bolt T-Shirt".
 - **Esperado:** o botão vira **Remove** e o ícone do carrinho mostra 1.
-- **Obtido:** nada muda. Só "Sauce Labs Backpack" e "Sauce Labs Bike Light" entram no carrinho; Bolt T-Shirt, Fleece Jacket, Onesie e Test.allTheThings() T-Shirt (Red) não entram. Na mesma exploração, **Remove** no catálogo também não tirou o Backpack do carrinho.
+- **Obtido:** nada muda. Numa sessão nova para cada produto, Bolt T-Shirt, Fleece Jacket e Test.allTheThings() T-Shirt (Red) **nunca** entram no carrinho; Backpack, Bike Light e Onesie entram. Adicionando os seis em sequência na mesma sessão, o Onesie também falha depois das tentativas anteriores. Na mesma exploração, **Remove** no catálogo não tirou o Backpack do carrinho.
+- **Correção deste relatório:** a primeira versão dizia "4 dos 6", porque a exploração só tinha adicionado os produtos em sequência. A revisão reproduziu com uma sessão por produto, e o relato foi corrigido.
 - **Severidade:** alta. Impede a compra da maior parte do catálogo.
 - **Prioridade:** alta.
 - **Evidência:** no screenshot, todos os botões continuam "Add to cart" e o carrinho não tem contador depois do clique.
@@ -71,7 +72,7 @@ O [Sauce Demo](https://www.saucedemo.com/) e o [ServeRest](https://serverest.dev
 - **Severidade:** média. A função quebra, mas o catálogo continua navegável sem ordenar.
 - **Prioridade:** média.
 - **Evidência:** o HTML salvo depois do alerta mostra "Name (A to Z)" como opção ativa e "Sauce Labs Backpack" como primeiro item.
-- **Teste:** `tests/ui/test_inventory.py::test_error_user_sorts_without_an_error_alert`
+- **Teste:** `tests/ui/test_inventory.py::test_error_user_sorts_products_without_an_error`
 
 ## BUG-005: API: a lista de usuários expõe a senha de todos, sem autenticação
 
