@@ -14,7 +14,8 @@ concurrency:
 
 jobs:
   test:
-    # Pinned image: a new runner image (and Chrome) only arrives when this line changes.
+    # Pinned OS release: ubuntu-latest can move to a new Ubuntu without notice. Chrome still
+    # updates with the weekly runner image, so the job prints its version below.
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
