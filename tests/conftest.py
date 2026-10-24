@@ -7,6 +7,9 @@ import pytest
 from selenium import webdriver
 from selenium.webdriver.remote.webdriver import WebDriver
 
+from pages.inventory_page import InventoryPage
+from tests.data.users import STANDARD_USER
+
 BASE_URL = os.getenv("BASE_URL", "https://www.saucedemo.com")
 ARTIFACTS_DIR = Path("screenshots")
 
@@ -51,6 +54,16 @@ def driver(request: pytest.FixtureRequest) -> Iterator[WebDriver]:
             _save_failure_artifacts(drv, request.node.nodeid)
     finally:
         drv.quit()
+
+
+@pytest.fixture
+def inventory_page(driver: WebDriver, base_url: str) -> InventoryPage:
+    # Back door instead of the login form: the site keeps the session in this cookie, so tests
+    # that are not about login start already logged in. Login itself is covered in test_login.py.
+    driver.get(base_url)  # a cookie can only be set for the domain that is open
+    driver.add_cookie({"name": "session-username", "value": STANDARD_USER})
+    driver.get(f"{base_url}/inventory.html")
+    return InventoryPage(driver)
 
 
 def _failed(item: pytest.Item) -> bool:

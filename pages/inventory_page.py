@@ -3,6 +3,8 @@ from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
+from pages.components.header import Header
+
 TIMEOUT = 10
 
 
@@ -16,6 +18,7 @@ class InventoryPage:
         self.wait = WebDriverWait(driver, timeout)
         # The URL changes before React renders the list, so the page is "loaded" when this shows.
         self.wait.until(EC.visibility_of_element_located(self.CONTAINER))
+        self.header = Header(driver)
 
     def title(self) -> str:
         return self.driver.find_element(*self.TITLE).text

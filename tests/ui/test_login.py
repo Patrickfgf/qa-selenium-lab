@@ -42,3 +42,14 @@ def test_login_is_rejected_and_stays_on_login(driver, base_url, username, passwo
 
     assert login.error_message() == expected_error
     assert driver.current_url == f"{base_url}/"
+
+
+def test_log_out_ends_the_session(driver, base_url, inventory_page):
+    login = inventory_page.header.log_out()
+
+    assert driver.current_url == f"{base_url}/"
+    driver.get(f"{base_url}/inventory.html")
+    assert (
+        login.error_message()
+        == "Epic sadface: You can only access '/inventory.html' when you are logged in."
+    )
