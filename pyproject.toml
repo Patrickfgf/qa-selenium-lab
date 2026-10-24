@@ -1,0 +1,36 @@
+[project]
+name = "qa-selenium-lab"
+version = "0.1.0"
+description = "Web UI and REST API test automation lab with Selenium 4 and pytest"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pytest>=9.1.1",
+    "pytest-html>=4.2.0",
+    "selenium>=4.51.0",
+]
+
+[tool.uv]
+# A test suite, not a library: nothing to build or install as a package.
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--html=reports/report.html",
+    "--self-contained-html",
+]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "PT"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.17.2",
+]

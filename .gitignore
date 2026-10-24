@@ -16,3 +16,6 @@ screenshots/
 .DS_Store
 .idea/
 .vscode/
+
+# Local output of browser tooling
+.playwright-mcp/
