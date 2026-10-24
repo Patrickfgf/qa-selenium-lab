@@ -1,7 +1,7 @@
 import pytest
 
 from pages.login_page import LoginPage
-from tests.data.users import LOCKED_OUT_USER, PASSWORD, STANDARD_USER
+from tests.data.users import LOCKED_OUT_USER, PASSWORD, PERFORMANCE_GLITCH_USER, STANDARD_USER
 
 NO_MATCH = "Epic sadface: Username and password do not match any user in this service"
 
@@ -53,3 +53,16 @@ def test_log_out_ends_the_session(driver, base_url, inventory_page):
         login.error_message()
         == "Epic sadface: You can only access '/inventory.html' when you are logged in."
     )
+
+
+# This user's login takes about five seconds (seen while exploring the site). Only this flow gets
+# a longer wait; raising the global timeout would slow down every failing test in the suite.
+SLOW_USER_TIMEOUT = 20
+
+
+def test_performance_glitch_user_gets_in_with_a_longer_wait(driver, base_url):
+    inventory = LoginPage.open(driver, base_url).login_as(
+        PERFORMANCE_GLITCH_USER, PASSWORD, timeout=SLOW_USER_TIMEOUT
+    )
+
+    assert inventory.title() == "Products"
