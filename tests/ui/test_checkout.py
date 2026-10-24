@@ -4,6 +4,14 @@ from selenium.common.exceptions import TimeoutException
 from tests.data.checkout import CUSTOMER
 
 PRODUCTS = ["Sauce Labs Backpack", "Sauce Labs Bike Light"]
+# Every product except the backpack: their prices add up to 99.95.
+FIVE_PRODUCTS = [
+    "Sauce Labs Bike Light",
+    "Sauce Labs Bolt T-Shirt",
+    "Sauce Labs Fleece Jacket",
+    "Sauce Labs Onesie",
+    "Test.allTheThings() T-Shirt (Red)",
+]
 
 
 @pytest.fixture
@@ -60,3 +68,17 @@ def test_checkout_info_requires_each_field(
     info = checkout_info_page.continue_expecting_error(first_name, last_name, postal_code)
 
     assert info.error_message() == expected_error
+
+
+@pytest.mark.xfail(
+    strict=True,
+    raises=AssertionError,
+    reason="BUG-002: item total shows a float artifact ($99.94999999999999 instead of $99.95)",
+)
+def test_item_total_adds_up_five_products(inventory_page):
+    for product in FIVE_PRODUCTS:
+        inventory_page.add_to_cart(product)
+
+    overview = inventory_page.header.open_cart().checkout().continue_with(*CUSTOMER)
+
+    assert overview.subtotal() == sum(overview.item_prices())
