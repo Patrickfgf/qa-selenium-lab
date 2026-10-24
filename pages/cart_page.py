@@ -3,7 +3,6 @@ from selenium.webdriver.remote.webdriver import WebDriver
 
 from pages.base_page import BasePage
 from pages.checkout_info_page import CheckoutInfoPage
-from pages.components.header import Header
 
 
 class CartPage(BasePage):
@@ -14,7 +13,6 @@ class CartPage(BasePage):
     def __init__(self, driver: WebDriver) -> None:
         super().__init__(driver)
         self._visible(self.CART_LIST)
-        self.header = Header(driver)
 
     def item_names(self) -> list[str]:
         return self._texts(self.ITEM_NAMES)

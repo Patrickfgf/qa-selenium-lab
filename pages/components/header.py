@@ -1,6 +1,7 @@
 from selenium.webdriver.common.by import By
 
 from pages.base_page import BasePage
+from pages.cart_page import CartPage
 
 
 class Header(BasePage):
@@ -18,10 +19,7 @@ class Header(BasePage):
         # The badge is removed from the DOM when the cart is empty.
         return int(badges[0].text) if badges else 0
 
-    def open_cart(self):
-        # Imported here: CartPage has a Header itself (circular import).
-        from pages.cart_page import CartPage
-
+    def open_cart(self) -> CartPage:
         self._click(self.CART_LINK)
         return CartPage(self.driver)
 
