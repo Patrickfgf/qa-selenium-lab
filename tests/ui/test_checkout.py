@@ -1,5 +1,4 @@
 import pytest
-from selenium.common.exceptions import TimeoutException
 
 from tests.data.checkout import CUSTOMER
 
@@ -57,7 +56,7 @@ def test_standard_user_buys_two_products(inventory_page):
             id="TC-CHK-04-whitespace-only",
             marks=pytest.mark.xfail(
                 strict=True,
-                raises=TimeoutException,
+                raises=AssertionError,
                 reason="BUG-001: whitespace-only fields are accepted, so no error ever shows",
             ),
         ),

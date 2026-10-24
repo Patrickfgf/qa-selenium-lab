@@ -1,7 +1,7 @@
 import os
 import re
 import shutil
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from pathlib import Path
 
 import pytest
@@ -63,13 +63,21 @@ def driver(request: pytest.FixtureRequest) -> Iterator[WebDriver]:
 
 
 @pytest.fixture
-def inventory_page(driver: WebDriver, base_url: str) -> InventoryPage:
+def open_inventory_as(driver: WebDriver, base_url: str) -> Callable[[str], InventoryPage]:
     # Back door instead of the login form: the site keeps the session in this cookie, so tests
     # that are not about login start already logged in. Login itself is covered in test_login.py.
-    driver.get(base_url)  # a cookie can only be set for the domain that is open
-    driver.add_cookie({"name": "session-username", "value": STANDARD_USER})
-    driver.get(f"{base_url}/inventory.html")
-    return InventoryPage(driver)
+    def _open(username: str) -> InventoryPage:
+        driver.get(base_url)  # a cookie can only be set for the domain that is open
+        driver.add_cookie({"name": "session-username", "value": username})
+        driver.get(f"{base_url}/inventory.html")
+        return InventoryPage(driver)
+
+    return _open
+
+
+@pytest.fixture
+def inventory_page(open_inventory_as: Callable[[str], InventoryPage]) -> InventoryPage:
+    return open_inventory_as(STANDARD_USER)
 
 
 def _failed(item: pytest.Item) -> bool:

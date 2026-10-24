@@ -1,5 +1,6 @@
 from typing import Self
 
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 
@@ -30,8 +31,12 @@ class CheckoutInfoPage(BasePage):
         self._submit(first_name, last_name, postal_code)
         return self
 
-    def error_message(self) -> str:
-        return self._visible(self.ERROR).text
+    def error_message(self) -> str | None:
+        """Text of the error banner, or None if no error shows up within the timeout."""
+        try:
+            return self._visible(self.ERROR).text
+        except TimeoutException:
+            return None
 
     def _submit(self, first_name: str, last_name: str, postal_code: str) -> None:
         self.driver.find_element(*self.FIRST_NAME).send_keys(first_name)
