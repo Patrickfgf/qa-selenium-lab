@@ -16,6 +16,8 @@ package = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Repo root on sys.path so tests can import the page objects in pages/.
+pythonpath = ["."]
 addopts = [
     "-ra",
     "--strict-markers",
