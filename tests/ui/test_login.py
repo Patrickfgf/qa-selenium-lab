@@ -36,6 +36,10 @@ def test_standard_user_logs_in_and_sees_products(driver, base_url):
         ),
         # Both empty: the username rule is checked first, so only its message shows.
         pytest.param("", "", "Epic sadface: Username is required", id="TC-LOGIN-07-both-empty"),
+        # The lock is only revealed to someone who has the password: no account enumeration.
+        pytest.param(
+            LOCKED_OUT_USER, "wrong_password", NO_MATCH, id="TC-LOGIN-08-locked-wrong-password"
+        ),
     ],
 )
 def test_login_is_rejected_and_stays_on_login(driver, base_url, username, password, expected_error):
