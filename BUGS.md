@@ -1,10 +1,10 @@
 # Relatórios de bug
 
-O [Sauce Demo](https://www.saucedemo.com/) é um site de demonstração feito para treinar automação, e parte dos usuários de teste existe justamente para ter defeitos. Mesmo assim, registro cada um no formato que usaria num time. Nenhum relatório entrou sem o defeito ser reproduzido duas vezes. Cada um tem um teste que falha enquanto o defeito existir: o teste é marcado com `xfail(strict=True)`, e se alguém corrigir o defeito, o teste passa a acusar (XPASS) e o relatório precisa ser revisto.
+O [Sauce Demo](https://www.saucedemo.com/) e o [ServeRest](https://serverest.dev/) são aplicações feitas para treinar testes, e parte dos defeitos existe de propósito. Mesmo assim, registro cada um no formato que usaria num time. Nenhum relatório entrou sem o defeito ser reproduzido duas vezes. Cada um tem um teste que falha enquanto o defeito existir: o teste é marcado com `xfail(strict=True)`, e se alguém corrigir o defeito, o teste passa a acusar (XPASS) e o relatório precisa ser revisto.
 
 - **Severidade:** impacto técnico do defeito.
 - **Prioridade:** urgência de correção para o negócio. As duas nem sempre andam juntas; o BUG-002 é o exemplo.
-- **Ambiente comum:** https://www.saucedemo.com, Chrome 155 headless, janela 1920×1080, macOS (local) e ubuntu-24.04 (CI). Encontrados em 24/10/2026.
+- **Ambiente comum (BUG-001 a 004):** https://www.saucedemo.com, Chrome 155 headless, janela 1920×1080, macOS (local) e ubuntu-24.04 (CI). Encontrados em 24/10/2026.
 - **Evidência:** a cada execução, a suíte salva screenshot e HTML da página dos testes destes bugs em `screenshots/` (artefato `test-report` no CI). O screenshot do Chrome cobre só a área visível; quando o valor está abaixo da dobra, a prova está no HTML.
 
 | ID | Título | Severidade | Prioridade |
@@ -13,6 +13,7 @@ O [Sauce Demo](https://www.saucedemo.com/) é um site de demonstração feito pa
 | BUG-002 | "Item total" do checkout aparece com erro de ponto flutuante | Baixa | Alta |
 | BUG-003 | "Add to cart" não faz nada em 4 dos 6 produtos (`problem_user`) | Alta | Alta |
 | BUG-004 | Ordenar o catálogo abre um alerta de erro e não ordena (`error_user`) | Média | Média |
+| BUG-005 | API: a lista de usuários expõe a senha de todos, sem autenticação | Crítica | Alta |
 
 ---
 
@@ -71,3 +72,15 @@ O [Sauce Demo](https://www.saucedemo.com/) é um site de demonstração feito pa
 - **Prioridade:** média.
 - **Evidência:** o HTML salvo depois do alerta mostra "Name (A to Z)" como opção ativa e "Sauce Labs Backpack" como primeiro item.
 - **Teste:** `tests/ui/test_inventory.py::test_error_user_sorts_without_an_error_alert`
+
+## BUG-005: API: a lista de usuários expõe a senha de todos, sem autenticação
+
+- **Sistema:** ServeRest 3.2.2 (API REST de estudo), rodando localmente e no CI.
+- **Passos:**
+  1. Sem token, enviar `GET /usuarios`.
+- **Esperado:** a resposta não traz senha de ninguém. Senha não deveria sair da API em nenhuma rota, e listar usuários deveria exigir autenticação.
+- **Obtido:** `200 OK` com cada usuário trazendo `password` em texto puro.
+- **Observação:** o próprio Swagger do ServeRest documenta esse campo, então o comportamento segue o contrato publicado. Registro como defeito porque, num sistema real, isso seria um vazamento de credenciais. O JSON Schema da suíte aceita o campo, porque é o contrato documentado, mas não o exige, e o teste do bug falha enquanto o campo existir.
+- **Severidade:** crítica (exposição de credenciais).
+- **Prioridade:** alta.
+- **Teste:** `tests/api/test_users_api.py::test_user_list_does_not_expose_passwords`

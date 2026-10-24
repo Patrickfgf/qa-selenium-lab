@@ -54,3 +54,23 @@ Registro curto das escolhas que mudam como a suíte se comporta. Cada uma traz a
 - **Decisão:** cada defeito do `BUGS.md` tem um teste que descreve o comportamento correto e está marcado como falha esperada, com o ID do bug no motivo e o tipo de exceção esperado.
 - **Alternativa descartada:** pular o teste (`skip`), ou deixar o CI vermelho até alguém corrigir.
 - **Por quê:** `skip` não executa nada e esconde o bug. Vermelho permanente ensina o time a ignorar o vermelho. Com `strict=True`, se o bug for corrigido, o teste passa a acusar e o relatório é revisto. O `raises=` evita que uma falha por outro motivo (um localizador quebrado, por exemplo) seja confundida com o bug.
+
+## 9. API: ServeRest rodando dentro do job, e não uma instância compartilhada
+
+- **Decisão:** os testes de API usam o ServeRest (`npx serverest@3.2.2`), iniciado no próprio job do CI, que espera a API responder antes dos testes.
+- **Alternativa descartada:** a instância pública do ServeRest, ou o restful-booker, que também é compartilhado.
+- **Por quê:** numa instância compartilhada, os dados mudam por causa de outras pessoas e a disponibilidade não depende de mim. Teste que falha por isso é instabilidade fabricada. Rodando local, cada execução começa do mesmo estado. Os testes também criam os próprios usuários, com e-mail único, e os apagam no final.
+- **Quando mudaria:** para testar um ambiente de homologação de verdade, eu rodaria um conjunto pequeno e só de leitura contra ele, separado desta suíte.
+
+## 10. Contrato com JSON Schema, e não com pydantic
+
+- **Decisão:** as respostas são validadas com `jsonschema` contra schemas em `tests/api/schemas/`, escritos a partir do Swagger da API.
+- **Alternativa descartada:** modelos pydantic.
+- **Por quê:** o contrato de uma API REST costuma ser publicado em OpenAPI/Swagger, que usa JSON Schema. Um schema em JSON pode ser comparado campo a campo com o Swagger e lido por quem não programa em Python. Com `additionalProperties: false`, um campo novo e não documentado também quebra o teste.
+- **Quando mudaria:** se a suíte precisasse montar objetos tipados para reutilizar em várias chamadas, pydantic pagaria o custo.
+
+## 11. Cliente de API fino, e não um "Page Object" de API
+
+- **Decisão:** `tests/api/client.py` só junta a URL base, o timeout e o cabeçalho `Authorization`, e devolve a resposta crua do `requests`.
+- **Alternativa descartada:** um cliente com um método por regra de negócio (`create_user`, `login`...) que já devolve o JSON tratado.
+- **Por quê:** num teste de API, o status, os cabeçalhos e o corpo *são* o que está sendo testado. Esconder a resposta num método tiraria isso do teste. As ações que só preparam o cenário (criar usuário, fazer login) ficaram em fixtures.
