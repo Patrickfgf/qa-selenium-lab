@@ -22,3 +22,35 @@ Registro curto das escolhas que mudam como a suíte se comporta. Cada uma traz a
 - **Alternativa descartada:** um navegador por sessão, com limpeza de cookies e `localStorage` entre os testes.
 - **Por quê:** o Sauce Demo guarda a sessão num cookie e o carrinho no `localStorage`. Com um navegador compartilhado, o isolamento dependeria de a limpeza estar sempre certa, e um carrinho que vaza de um teste para o outro gera o teste que só falha quando a suíte roda inteira. Nova tentativa automática esconde exatamente esse tipo de problema: quando um teste falha, quero a evidência (screenshot e HTML da página), não um segundo sorteio.
 - **Quando mudaria:** com centenas de testes, o custo de abrir o navegador passaria a pesar. Aí eu mediria primeiro e consideraria paralelizar (pytest-xdist ou Selenium Grid) antes de compartilhar o navegador.
+
+## 4. Page Objects: localizador na classe, asserção no teste, próxima página como retorno
+
+- **Decisão:** cada página guarda seus localizadores como tuplas `(By, valor)` e nunca um `WebElement`. O construtor espera um elemento-âncora da página. Ação que muda de tela devolve o Page Object da tela seguinte (`login_as` devolve `InventoryPage`). Nenhum `assert` dentro de `pages/`. O cabeçalho (carrinho e menu) é um componente (`pages/components/header.py`) usado pelas páginas, e não uma página.
+- **Alternativa descartada:** Page Object que guarda elementos já encontrados e faz as próprias verificações.
+- **Por quê:** elemento guardado fica velho quando o React redesenha a tela (`StaleElementReferenceException`). Com a asserção no teste, o mesmo Page Object serve para o caminho feliz e para o caso de erro (`login_as` e `login_expecting_error`).
+- **Quando mudaria:** não mudaria a regra; mudaria o tamanho. Com dezenas de páginas, eu separaria componentes menores (linha de produto, formulário).
+
+## 5. `BasePage` só depois da duplicação
+
+- **Decisão:** as esperas comuns (`_visible`, `_click`, `_texts`) foram para uma `BasePage` num commit de refatoração, quando `LoginPage`, `InventoryPage` e `Header` já repetiam o mesmo código.
+- **Alternativa descartada:** começar por uma `BasePage` com métodos para tudo o que talvez fosse preciso.
+- **Por quê:** método que nenhum teste chama é código para manter sem retorno. O histórico mostra a duplicação aparecendo e sendo removida.
+
+## 6. Login pela "porta dos fundos" fora dos testes de login
+
+- **Decisão:** a fixture `inventory_page` grava o cookie `session-username` e abre o catálogo direto. Só `test_login.py` usa o formulário de login.
+- **Alternativa descartada:** passar pelo formulário de login no começo de todo teste.
+- **Por quê:** a documentação do Selenium recomenda não usar a interface para preparar o estado de um teste. Isso deixa o teste mais rápido e faz ele falhar só pelo que ele testa. O mecanismo foi conferido ao vivo: sem o cookie, `/inventory.html` volta para o login com erro; com o cookie, abre o catálogo.
+- **Quando mudaria:** num sistema real eu prepararia a sessão por uma API de login, e não por um cookie montado à mão. Se o Sauce Demo mudar como guarda a sessão, a fixture volta a usar o formulário.
+
+## 7. Preços em `Decimal` e oráculo a partir da tela
+
+- **Decisão:** todo preço lido da página vira `Decimal`. O teste de compra confere que o item total é a soma dos preços listados e que o total é item total mais taxa. A taxa não é recalculada, porque o percentual não aparece em lugar nenhum.
+- **Alternativa descartada:** `float`, ou números fixos copiados da tela no dia em que o teste foi escrito.
+- **Por quê:** somas em `float` erram: os cinco preços do BUG-002 somam 99.94999999999999 em `float`, e é exatamente esse valor que o site mostra. Número fixo quebraria a cada mudança de preço e não diria de onde vem o valor esperado.
+
+## 8. Bug conhecido como `xfail(strict=True, raises=...)`
+
+- **Decisão:** cada defeito do `BUGS.md` tem um teste que descreve o comportamento correto e está marcado como falha esperada, com o ID do bug no motivo e o tipo de exceção esperado.
+- **Alternativa descartada:** pular o teste (`skip`), ou deixar o CI vermelho até alguém corrigir.
+- **Por quê:** `skip` não executa nada e esconde o bug. Vermelho permanente ensina o time a ignorar o vermelho. Com `strict=True`, se o bug for corrigido, o teste passa a acusar e o relatório é revisto. O `raises=` evita que uma falha por outro motivo (um localizador quebrado, por exemplo) seja confundida com o bug.
