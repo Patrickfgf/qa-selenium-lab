@@ -3,6 +3,7 @@ from typing import Self
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
+from selenium.webdriver.support.ui import Select
 
 from pages.base_page import TIMEOUT, BasePage, Locator
 from pages.components.header import Header
@@ -14,6 +15,8 @@ class InventoryPage(BasePage):
     TITLE = (By.CSS_SELECTOR, '[data-test="title"]')
     ITEM_NAMES = (By.CSS_SELECTOR, '[data-test="inventory-item-name"]')
     ITEM_PRICES = (By.CSS_SELECTOR, '[data-test="inventory-item-price"]')
+    SORT_SELECT = (By.CSS_SELECTOR, '[data-test="product-sort-container"]')
+    ACTIVE_SORT = (By.CSS_SELECTOR, '[data-test="active-option"]')
 
     def __init__(self, driver: WebDriver, timeout: float = TIMEOUT) -> None:
         super().__init__(driver, timeout)
@@ -29,6 +32,13 @@ class InventoryPage(BasePage):
 
     def item_prices(self) -> list[Decimal]:
         return [to_decimal(text) for text in self._texts(self.ITEM_PRICES)]
+
+    def sort_by(self, option_text: str) -> Self:
+        Select(self._visible(self.SORT_SELECT)).select_by_visible_text(option_text)
+        return self
+
+    def active_sort(self) -> str:
+        return self.driver.find_element(*self.ACTIVE_SORT).text
 
     def add_to_cart(self, product_name: str) -> Self:
         self._click(self._item_button(product_name, "Add to cart"))
