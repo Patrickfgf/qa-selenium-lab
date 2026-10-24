@@ -6,6 +6,7 @@ from tests.data.users import LOCKED_OUT_USER, PASSWORD, PERFORMANCE_GLITCH_USER,
 NO_MATCH = "Epic sadface: Username and password do not match any user in this service"
 
 
+@pytest.mark.smoke
 def test_standard_user_logs_in_and_sees_products(driver, base_url):
     inventory = LoginPage.open(driver, base_url).login_as(STANDARD_USER, PASSWORD)
 

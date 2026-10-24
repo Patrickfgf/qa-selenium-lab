@@ -25,6 +25,9 @@ addopts = [
     "--html=reports/report.html",
     "--self-contained-html",
 ]
+markers = [
+    "smoke: quick check that login and purchase work; run with -m smoke",
+]
 
 [tool.ruff]
 line-length = 100

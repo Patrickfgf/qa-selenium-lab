@@ -20,6 +20,7 @@ def checkout_info_page(inventory_page):
     return inventory_page.header.open_cart().checkout()
 
 
+@pytest.mark.smoke
 def test_standard_user_buys_two_products(inventory_page):
     for product in PRODUCTS:
         inventory_page.add_to_cart(product)
