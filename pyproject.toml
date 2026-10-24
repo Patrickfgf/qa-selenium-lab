@@ -5,8 +5,10 @@ description = "Web UI and REST API test automation lab with Selenium 4 and pytes
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "jsonschema>=4.26.0",
     "pytest>=9.1.1",
     "pytest-html>=4.2.0",
+    "requests>=2.34.2",
     "selenium>=4.51.0",
 ]
 
