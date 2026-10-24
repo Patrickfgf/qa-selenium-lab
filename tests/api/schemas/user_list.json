@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GET /usuarios 200",
+  "type": "object",
+  "required": [
+    "quantidade",
+    "usuarios"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "quantidade": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "usuarios": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "nome",
+          "email",
+          "administrador",
+          "_id"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string",
+            "description": "Documented by the API, but a password should never be listed: see BUG-005."
+          },
+          "administrador": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false"
+            ]
+          },
+          "_id": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}
