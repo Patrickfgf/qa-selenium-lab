@@ -1,3 +1,5 @@
+from typing import Self
+
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 
@@ -12,6 +14,7 @@ class CheckoutInfoPage(BasePage):
     LAST_NAME = (By.CSS_SELECTOR, '[data-test="lastName"]')
     POSTAL_CODE = (By.CSS_SELECTOR, '[data-test="postalCode"]')
     CONTINUE_BUTTON = (By.CSS_SELECTOR, '[data-test="continue"]')
+    ERROR = (By.CSS_SELECTOR, '[data-test="error"]')
 
     def __init__(self, driver: WebDriver) -> None:
         super().__init__(driver)
@@ -22,6 +25,13 @@ class CheckoutInfoPage(BasePage):
     ) -> CheckoutOverviewPage:
         self._submit(first_name, last_name, postal_code)
         return CheckoutOverviewPage(self.driver)
+
+    def continue_expecting_error(self, first_name: str, last_name: str, postal_code: str) -> Self:
+        self._submit(first_name, last_name, postal_code)
+        return self
+
+    def error_message(self) -> str:
+        return self._visible(self.ERROR).text
 
     def _submit(self, first_name: str, last_name: str, postal_code: str) -> None:
         self.driver.find_element(*self.FIRST_NAME).send_keys(first_name)
