@@ -7,6 +7,9 @@ __pycache__/
 .coverage
 htmlcov/
 
+# JavaScript tooling (installed from package-lock.json with npm ci)
+node_modules/
+
 # Test artifacts (generated on every run; CI uploads them as artifacts)
 reports/
 screenshots/
