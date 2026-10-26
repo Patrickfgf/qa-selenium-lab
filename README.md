@@ -1,8 +1,18 @@
 # QA Selenium Lab
 
+[![CI](https://github.com/Patrickfgf/qa-selenium-lab/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Patrickfgf/qa-selenium-lab/actions/workflows/ci.yml)
+
 Laboratório pessoal de estudo de automação de testes: interface web com **Selenium 4 + pytest**, API REST com **requests + JSON Schema** e acessibilidade com **axe-core** e navegação por teclado, rodando no **GitHub Actions** a cada mudança.
 
 **Status:** as quatro etapas estão concluídas: esqueleto e CI; Page Objects, plano de teste e relatórios de bug; testes de API; acessibilidade. O que ainda não cobre está no fim desta página.
+
+## Por onde ler em cinco minutos
+
+1. **Um fluxo de ponta a ponta:** [`tests/ui/test_checkout.py`](tests/ui/test_checkout.py), a compra de dois produtos. O total é conferido somando em `Decimal` os preços que a própria tela mostra.
+2. **Um Page Object:** [`pages/inventory_page.py`](pages/inventory_page.py). O localizador fica guardado como tupla, o construtor espera a página desenhar, e o XPath acha o botão pelo nome do produto.
+3. **Um bug e o teste que o prende:** o BUG-006 em [`BUGS.md`](BUGS.md) e [`tests/a11y/test_keyboard.py`](tests/a11y/test_keyboard.py). O axe-core não acusa nada na página, e o teste de teclado mostra que o carrinho não recebe foco.
+4. **Uma decisão:** a §8 de [`docs/DECISIONS.md`](docs/DECISIONS.md), sobre bug conhecido como `xfail(strict=True)` e por que o `raises=` precisa de um tipo diferente das outras falhas.
+5. **A evidência de uma falha:** o artefato `test-report` de uma execução recente do [CI](https://github.com/Patrickfgf/qa-selenium-lab/actions/workflows/ci.yml), com o screenshot e o HTML de cada teste de bug conhecido (o artefato fica 14 dias).
 
 ## O que existe hoje
 
@@ -15,6 +25,25 @@ Laboratório pessoal de estudo de automação de testes: interface web com **Sel
 - [`BUGS.md`](BUGS.md): seis defeitos encontrados (cinco na interface, um na API), cada um com um teste `xfail(strict=True)` que o reproduz.
 - [`docs/DECISIONS.md`](docs/DECISIONS.md): as escolhas que mudam o comportamento da suíte, com a alternativa descartada.
 - `.github/workflows/ci.yml`: lint, formatação e testes a cada mudança; o relatório e a evidência ficam como artefato da execução.
+
+## Como as peças conversam
+
+```mermaid
+flowchart LR
+    subgraph browser ["Interface e acessibilidade"]
+        UI["tests/ui · tests/a11y"] --> PO["pages/ · Page Objects"]
+        PO --> SE["Selenium 4"]
+        UI -. injeta .-> AX["axe-core"]
+    end
+    SE -- "W3C WebDriver (HTTP)" --> CD["chromedriver"] --> CH["Chrome headless"] --> SD["Sauce Demo"]
+    AX -.-> CH
+    subgraph api ["API"]
+        TA["tests/api"] --> CL["client.py · requests"]
+    end
+    CL -- "HTTP + JWT" --> SR["ServeRest local"]
+```
+
+Cada comando do Selenium é um pedido HTTP ao chromedriver, por isso toda espera é explícita (`WebDriverWait`). Os testes de API não abrem navegador: conferem status, corpo e contrato direto no ServeRest, que sobe dentro do job do CI.
 
 ## Como rodar
 
