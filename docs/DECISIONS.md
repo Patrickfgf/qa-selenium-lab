@@ -74,3 +74,17 @@ Registro curto das escolhas que mudam como a suíte se comporta. Cada uma traz a
 - **Decisão:** `tests/api/client.py` só junta a URL base, o timeout e o cabeçalho `Authorization`, e devolve a resposta crua do `requests`.
 - **Alternativa descartada:** um cliente com um método por regra de negócio (`create_user`, `login`...) que já devolve o JSON tratado.
 - **Por quê:** num teste de API, o status, os cabeçalhos e o corpo *são* o que está sendo testado. Esconder a resposta num método tiraria isso do teste. As ações que só preparam o cenário (criar usuário, fazer login) ficaram em fixtures.
+
+## 12. Acessibilidade em duas camadas: axe-core para as regras, Selenium para o teclado
+
+- **Decisão:** o axe-core roda nas páginas da compra e o CI falha em qualquer violação das regras WCAG 2.x A e AA. O uso pelo teclado tem teste próprio, que aperta Tab e anota quem recebe o foco (`switch_to.active_element`).
+- **Alternativa descartada:** só o axe, e com todas as regras ligadas, inclusive as de boa prática.
+- **Por quê:** o axe lê o HTML, mas não sabe quais elementos têm ação de clique. Na exploração, ele não acusou nada no catálogo, e o teste de teclado achou o carrinho fora do alcance do Tab (BUG-006), uma falha de nível A. As regras de boa prática (página sem `<h1>`, por exemplo) são sugestões, não critérios do WCAG; ficam anotadas no `TEST_PLAN.md` em vez de quebrar o build. O que o axe devolve como inconclusivo, como o contraste no catálogo, vira conferência manual.
+- **Quando mudaria:** num sistema obrigado a seguir uma norma específica, como o eMAG em sites de governo, eu ligaria as regras que a norma cobra e tiraria as outras.
+
+## 13. axe-core instalado pelo npm, com lockfile
+
+- **Decisão:** `package.json` fixa o `axe-core` na versão exata, o `package-lock.json` guarda o hash, e o CI instala com `npm ci --ignore-scripts`. Sem o pacote, o teste é pulado na máquina local e falha no CI, a mesma regra da API.
+- **Alternativas descartadas:** copiar o `axe.min.js` (650 KB) para dentro do repositório; o pacote Python `axe-selenium-python`; baixar o script de uma CDN na hora do teste.
+- **Por quê:** o arquivo copiado ninguém revisa, e atualizar vira trabalho manual. O pacote Python traz a própria cópia do axe-core (a versão 3.0.0, de abril de 2026, usa o 4.10.2, e o atual é o 4.14.0), então a versão das regras fica presa ao ritmo de lançamento dele, para poupar umas vinte linhas de código que injetam o script. A CDN põe rede e versão fora de controle no meio do teste. Pelo npm, a versão e o hash ficam no lockfile, e o Node já está no job por causa do ServeRest. O `--ignore-scripts` impede que um script de instalação rode no CI.
+- **Quando mudaria:** se o projeto deixasse de ter Node em qualquer outro lugar, copiar o script com a versão no nome do arquivo seria aceitável.

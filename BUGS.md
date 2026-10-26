@@ -14,6 +14,7 @@ O [Sauce Demo](https://www.saucedemo.com/) e o [ServeRest](https://serverest.dev
 | BUG-003 | "Add to cart" não funciona em 3 dos 6 produtos (`problem_user`) | Alta | Alta |
 | BUG-004 | Ordenar o catálogo abre um alerta de erro e não ordena (`error_user`) | Média | Média |
 | BUG-005 | API: a lista de usuários expõe a senha de todos, sem autenticação | Crítica | Alta |
+| BUG-006 | O link do carrinho não recebe foco pelo teclado | Alta | Alta |
 
 ---
 
@@ -85,3 +86,19 @@ O [Sauce Demo](https://www.saucedemo.com/) e o [ServeRest](https://serverest.dev
 - **Severidade:** crítica (exposição de credenciais).
 - **Prioridade:** alta.
 - **Teste:** `tests/api/test_users_api.py::test_user_list_does_not_expose_passwords`
+
+## BUG-006: O link do carrinho não recebe foco pelo teclado
+
+- **Usuário:** `standard_user`. O cabeçalho é o mesmo em todas as páginas internas.
+- **Ambiente:** https://www.saucedemo.com, Chrome 155 headless, janela 1920×1080, macOS. Encontrado em 26/10/2026, numa sondagem de navegação por teclado.
+- **Passos:**
+  1. Entrar como `standard_user`.
+  2. No catálogo, sem usar o mouse, apertar **Tab** repetidamente, do topo da página até o foco dar a volta.
+- **Esperado:** o ícone do carrinho recebe o foco em algum momento, e **Enter** abre o carrinho. O que funciona com o mouse deve funcionar pelo teclado (WCAG 2.1, critério 2.1.1 Teclado, nível A).
+- **Obtido:** o foco passa pelo menu, pela ordenação, pelos links e botões dos seis produtos e pelos links das redes sociais, 23 paradas ao todo, e nunca pelo carrinho. Nem `element.focus()` por script põe o foco nele. O menu lateral não tem item para o carrinho. Com o mouse, o clique abre `/cart.html` normalmente.
+- **Causa provável:** o elemento é `<a class="shopping_cart_link" data-test="shopping-cart-link" role="button" aria-label="Cart, empty">`, sem `href` e sem `tabindex`. Um `<a>` sem `href` não entra na ordem de foco. Um `<button>`, ou um link com `href="/cart.html"`, resolveria.
+- **Observação:** o axe-core não acusa nada nesta página. Ele confere o HTML (rótulos, papéis, contraste), mas não sabe que o elemento tem uma ação de clique que o teclado não alcança. Por isso a navegação por teclado tem teste próprio.
+- **Severidade:** alta. Quem navega só pelo teclado não consegue abrir o carrinho, e sem carrinho não há compra.
+- **Prioridade:** alta. A compra é o fluxo principal, e a correção é pequena.
+- **Evidência:** a mensagem da asserção lista as paradas de Tab. O HTML salvo pelo teste mostra o elemento sem `href` e sem `tabindex`.
+- **Teste:** `tests/a11y/test_keyboard.py::test_cart_link_is_reachable_with_the_keyboard`
