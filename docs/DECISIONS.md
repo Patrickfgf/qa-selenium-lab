@@ -53,7 +53,7 @@ Registro curto das escolhas que mudam como a suíte se comporta. Cada uma traz a
 
 - **Decisão:** cada defeito do `BUGS.md` tem um teste que descreve o comportamento correto e está marcado como falha esperada, com o ID do bug no motivo e o tipo de exceção esperado.
 - **Alternativa descartada:** pular o teste (`skip`), ou deixar o CI vermelho até alguém corrigir.
-- **Por quê:** `skip` não executa nada e esconde o bug. Vermelho permanente ensina o time a ignorar o vermelho. Com `strict=True`, se o bug for corrigido, o teste passa a acusar e o relatório é revisto. O `raises=` evita que uma falha por outro motivo (um localizador quebrado, por exemplo) seja confundida com o bug.
+- **Por quê:** `skip` não executa nada e esconde o bug. Vermelho permanente ensina o time a ignorar o vermelho. Com `strict=True`, se o bug for corrigido, o teste passa a acusar e o relatório é revisto. O `raises=` evita que uma falha por outro motivo (um localizador quebrado, por exemplo) seja confundida com o bug, mas só se o tipo esperado for diferente do dessas falhas. O pytest aplica o xfail também a uma exceção no setup, então um login lento (`TimeoutException`) passaria pelo BUG-003 se o teste dele esperasse `TimeoutException`. Por isso os testes de bug conhecido esperam `AssertionError`: no BUG-003, o clique e a confirmação do app são passos separados, e só a confirmação que não chega vira asserção.
 
 ## 9. API: ServeRest rodando dentro do job, e não uma instância compartilhada
 

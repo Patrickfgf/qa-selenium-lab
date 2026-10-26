@@ -101,6 +101,7 @@ Casos reais desta suíte:
 - O BUG-003 foi registrado primeiro como "4 dos 6 produtos". Reproduzindo com uma sessão nova por produto, eram 3: o Onesie só falhava depois de outras tentativas na mesma sessão. Lição: o resultado de um passo pode depender do estado deixado pelos anteriores, então a reprodução de um bug começa do zero.
 - Apareceu um screenshot de um teste que estava passando. Era evidência de uma execução anterior. A suíte passou a limpar `screenshots/` no início de cada execução.
 - Na sondagem de teclado, depois do último elemento do login o foco foi para o `<body>` numa rodada e voltou ao primeiro campo na outra. Um teste que esperasse só um dos dois seria instável, então a função que percorre a página com Tab para nos dois casos.
+- O teste do BUG-003 esperava `TimeoutException`, o sintoma do bug (o botão nunca vira "Remove"). Um teste mínimo mostrou que o pytest aplica o xfail também a uma exceção no setup: com o login do `problem_user` forçado a não terminar, o teste aparecia como XFAIL, o bug "confirmado" sem ter acontecido. O teste passou a esperar `AssertionError`; com a mesma simulação, agora o resultado é erro.
 
 ## Critérios de entrada e de saída
 
