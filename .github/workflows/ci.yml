@@ -36,6 +36,11 @@ jobs:
       - name: Show browser version
         run: google-chrome --version
 
+      # axe-core for the accessibility tests, exactly as pinned in package-lock.json.
+      # --ignore-scripts: no install script from a package runs on the runner.
+      - name: Install axe-core from the lockfile
+        run: npm ci --ignore-scripts
+
       # The API under test runs inside the job: no shared instance, no data left by other people.
       - name: Start ServeRest
         run: |

@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "description": "JavaScript test tooling for qa-selenium-lab: axe-core, injected into pages by the accessibility tests",
+  "devDependencies": {
+    "axe-core": "4.14.0"
+  }
+}

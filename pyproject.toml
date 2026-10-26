@@ -29,6 +29,7 @@ addopts = [
 ]
 markers = [
     "smoke: quick check that login and purchase work; run with -m smoke",
+    "a11y: accessibility checks (axe-core WCAG rules, keyboard-only use); run with -m a11y",
 ]
 
 [tool.ruff]

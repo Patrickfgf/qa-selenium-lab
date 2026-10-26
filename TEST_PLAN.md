@@ -2,17 +2,18 @@
 
 ## Objetivo
 
-Verificar os fluxos de negócio do Sauce Demo (entrar, ver o catálogo, ordenar, montar o carrinho, fechar a compra e sair) e as regras de autenticação e cadastro da API do ServeRest, registrar os defeitos encontrados e deixar claro o que é automatizado, o que fica manual e por quê.
+Verificar os fluxos de negócio do Sauce Demo (entrar, ver o catálogo, ordenar, montar o carrinho, fechar a compra e sair) e as regras de autenticação e cadastro da API do ServeRest, conferir a parte automatizável da acessibilidade, registrar os defeitos encontrados e deixar claro o que é automatizado, o que fica manual e por quê.
 
 ## Escopo
 
 - **Dentro (interface):** login e logout, catálogo e ordenação, carrinho, checkout em três passos, e os usuários de teste que simulam bloqueio (`locked_out_user`), defeitos (`problem_user`, `error_user`) e lentidão (`performance_glitch_user`).
 - **Dentro (API, ServeRest 3.2.2 local):** `POST /login`, `POST`, `GET` e `DELETE` de `/usuarios`, e a permissão de `POST /produtos`.
+- **Dentro (acessibilidade):** as regras WCAG 2.x A e AA do axe-core no login, no catálogo, no carrinho e no primeiro passo do checkout; e o uso só pelo teclado no login e no catálogo.
 - **Fora:** layout em celular, acessibilidade com leitor de tela, desempenho sob carga, outros navegadores além do Chrome, as páginas externas (redes sociais, site da Sauce Labs) e as rotas de carrinho da API.
 
 ## Comportamentos esperados
 
-Não há especificação do Sauce Demo: os comportamentos da interface foram **inferidos do próprio app** (mensagens de erro, rótulos, o que os campos exigem). Os da API vêm do **Swagger do ServeRest**, conferido contra as respostas reais.
+Não há especificação do Sauce Demo: os comportamentos da interface foram **inferidos do próprio app** (mensagens de erro, rótulos, o que os campos exigem). Os da API vêm do **Swagger do ServeRest**, conferido contra as respostas reais. Os de acessibilidade vêm do **WCAG 2.x**, níveis A e AA.
 
 | ID | Comportamento |
 |---|---|
@@ -25,6 +26,8 @@ Não há especificação do Sauce Demo: os comportamentos da interface foram **i
 | C-API-AUTH | Login devolve um token `Bearer` do próprio usuário. Credencial errada dá 401; requisição malformada dá 400, com o erro por campo. |
 | C-API-USERS | Usuário criado fica gravado com os dados enviados; e-mail duplicado é recusado; a lista segue o contrato e não expõe senha. |
 | C-API-PERM | Criar produto exige token (401 sem ele) e perfil de administrador (403 para usuário comum). |
+| C-A11Y-RULES | As páginas não violam as regras WCAG A e AA que o axe-core verifica. |
+| C-A11Y-KEYBOARD | O que funciona com o mouse funciona só com o teclado (WCAG 2.1.1): todo controle recebe foco, na ordem da página. |
 
 ## Riscos que orientam a prioridade
 
@@ -37,6 +40,7 @@ Não há especificação do Sauce Demo: os comportamentos da interface foram **i
 | R5. A suíte falhar por motivo que não é defeito (site de terceiros, tempo, ambiente) | média | médio | só espera explícita, navegador novo por teste, evidência em toda falha, triagem abaixo |
 | R6. A API deixar passar quem não deveria, ou expor dado sensível | média | alto | 401 contra 403 em `/produtos`, mensagem genérica no login, BUG-005 |
 | R7. A resposta da API mudar de formato sem aviso | média | médio | JSON Schema com `additionalProperties: false` |
+| R8. Quem não usa mouse, ou usa tecnologia assistiva, não conseguir comprar | média | alto | axe-core nas páginas da compra, navegação por teclado, BUG-006; leitor de tela fica manual |
 
 ## Técnicas de desenho de teste
 
@@ -45,6 +49,7 @@ Não há especificação do Sauce Demo: os comportamentos da interface foram **i
 - **Partição de equivalência no checkout:** cada campo tem três classes (vazio, só espaços, preenchido). O formulário valida na ordem nome, sobrenome e CEP, então cada linha deixa vazio o próximo campo obrigatório. A classe "só espaços" é a que reproduz o BUG-001.
 - **Valor-limite:** não se aplica aqui. Os campos não declaram tamanho mínimo nem máximo, e eu não invento um limite só para testá-lo.
 - **Oráculo independente:** o resultado esperado não sai do próprio app. A ordenação é conferida com `sorted()` do Python sobre o que a página mostra; o total, somando em `Decimal` os preços exibidos. É esse oráculo que pega o BUG-002.
+- **Acessibilidade em duas camadas:** o axe-core confere o que dá para ler no HTML (rótulos, papéis, contraste) e devolve três tipos de resultado: violação, aprovado e inconclusivo, que pede olho humano. O uso pelo teclado é testado à parte, apertando Tab e anotando quem recebe o foco, porque o axe não sabe quais elementos têm ação de clique. Foi essa segunda camada que achou o BUG-006, numa página em que o axe não acusou nada.
 
 ## Rastreabilidade
 
@@ -65,13 +70,19 @@ Não há especificação do Sauce Demo: os comportamentos da interface foram **i
 | C-API-USERS | gravação, duplicado, contrato | `api/test_users_api.py` | automatizado |
 | C-API-USERS | BUG-005 | `api/test_users_api.py::test_user_list_does_not_expose_passwords` | automatizado (xfail) |
 | C-API-PERM | 401, 403, 201 | `api/test_products_api.py` | automatizado |
+| C-A11Y-RULES | login, catálogo, carrinho, checkout | `a11y/test_axe.py` | automatizado |
+| C-A11Y-KEYBOARD | login e controles do catálogo | `a11y/test_keyboard.py` | automatizado |
+| C-A11Y-KEYBOARD | BUG-006 | `a11y/test_keyboard.py::test_cart_link_is_reachable_with_the_keyboard` | automatizado (xfail) |
 | Aparência do catálogo | `visual_user`, imagens do `problem_user` | — | manual |
+| Contraste no catálogo | `color-contrast` inconclusivo no axe | — | manual |
 
 ## O que fica manual, e por quê
 
 - **Aparência (`visual_user`, imagens do `problem_user`):** na exploração, o `problem_user` mostra a mesma foto em todos os produtos e o `visual_user` mostra o catálogo com outros preços. Conferir se uma tela "está certa" visualmente pede julgamento humano ou uma ferramenta de comparação de imagens. Automatizar isso com asserções de atributo geraria teste frágil para pouco ganho neste tamanho de projeto.
-- **Exploratório:** os quatro bugs da interface apareceram em sessões curtas de exploração com cada usuário. As técnicas acima transformaram cada um num caso de teste repetível. Exploração vem antes da automação, não no lugar dela.
-- **Leitor de tela, teclado e celular:** dependem de dispositivo e de percepção. Verificações automáticas de acessibilidade cobrem só parte das regras.
+- **Exploratório:** os quatro primeiros bugs da interface apareceram em sessões curtas de exploração com cada usuário, e o BUG-006 numa sondagem de navegação por teclado. As técnicas acima transformaram cada um num caso de teste repetível. Exploração vem antes da automação, não no lugar dela.
+- **Contraste no catálogo:** o axe deixa a regra `color-contrast` como inconclusiva nessa página: não consegue decidir sozinho a cor de fundo de alguns textos. A conferência é visual, com o medidor de contraste do DevTools.
+- **Leitor de tela e celular:** dependem de dispositivo e de percepção. O axe e o teste de teclado cobrem só parte do que uma pessoa com deficiência encontra.
+- **Boas práticas de acessibilidade fora do WCAG:** o axe aponta que nenhuma página tem um título `<h1>` e que o logo do login fica fora de qualquer região da página (*landmark*). São sugestões de melhoria, não critérios do WCAG, então não viraram relatório de bug nem fazem o CI falhar.
 
 ## Triagem de falha: defeito ou instabilidade?
 
@@ -89,6 +100,7 @@ Casos reais desta suíte:
 - O clique no menu falhou 3 de 3 vezes com `ElementClickInterceptedException`. Falha determinística aponta para o teste, e era o localizador: o `data-test` estava no ícone, e não no botão que recebe o clique.
 - O BUG-003 foi registrado primeiro como "4 dos 6 produtos". Reproduzindo com uma sessão nova por produto, eram 3: o Onesie só falhava depois de outras tentativas na mesma sessão. Lição: o resultado de um passo pode depender do estado deixado pelos anteriores, então a reprodução de um bug começa do zero.
 - Apareceu um screenshot de um teste que estava passando. Era evidência de uma execução anterior. A suíte passou a limpar `screenshots/` no início de cada execução.
+- Na sondagem de teclado, depois do último elemento do login o foco foi para o `<body>` numa rodada e voltou ao primeiro campo na outra. Um teste que esperasse só um dos dois seria instável, então a função que percorre a página com Tab para nos dois casos.
 
 ## Critérios de entrada e de saída
 
@@ -100,4 +112,5 @@ Casos reais desta suíte:
 - O TC-SORT-01 (A a Z) passaria mesmo se a ordenação não fizesse nada, porque A a Z já é a ordem inicial. Os outros três casos pegam esse defeito.
 - No Chrome, o screenshot cobre só a área visível. O HTML salvo junto completa a evidência.
 - A suíte depende de um site de terceiros: uma mudança no Sauce Demo pode quebrá-la sem mudança neste código.
+- Passar no axe não quer dizer que a página é acessível: o BUG-006 está numa página sem nenhuma violação no axe.
 - Na API, `GET /usuarios/{id}` de um id inexistente devolve 400, e não o 404 que REST sugere. Está documentado assim no Swagger, então não virou relatório de bug, mas é o tipo de desvio que eu levaria para a conversa com o time.
