@@ -1,6 +1,7 @@
 from decimal import Decimal
 from typing import Self
 
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support.ui import Select
@@ -41,11 +42,24 @@ class InventoryPage(BasePage):
         return self.driver.find_element(*self.ACTIVE_SORT).text
 
     def add_to_cart(self, product_name: str) -> Self:
-        self._click(self._item_button(product_name, "Add to cart"))
+        self.click_add_to_cart(product_name)
         # The button turning into "Remove" is the app's confirmation; reading the cart badge
         # right after the click could race the re-render.
         self._visible(self._item_button(product_name, "Remove"))
         return self
+
+    def click_add_to_cart(self, product_name: str) -> Self:
+        """Click "Add to cart" without waiting for the app to confirm it (see is_in_cart)."""
+        self._click(self._item_button(product_name, "Add to cart"))
+        return self
+
+    def is_in_cart(self, product_name: str) -> bool:
+        """Whether the product's button turns into "Remove", the app's confirmation, in time."""
+        try:
+            self._visible(self._item_button(product_name, "Remove"))
+        except TimeoutException:
+            return False
+        return True
 
     @staticmethod
     def _item_button(product_name: str, label: str) -> Locator:
