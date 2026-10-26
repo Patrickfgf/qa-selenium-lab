@@ -1,5 +1,4 @@
 import pytest
-from selenium.common.exceptions import TimeoutException
 
 from pages.inventory_page import InventoryPage
 from tests.data.users import ERROR_USER, PROBLEM_USER
@@ -31,8 +30,9 @@ def test_sort_orders_products(inventory_page, option, read_values, descending):
     assert sorted(inventory.item_names()) == names_before
 
 
-# The special users log in during setup: a failure there is reported as an error, and can never
-# be mistaken for the expected failure of the known-bug tests below.
+# The special users log in during setup. pytest applies an xfail to an exception raised in setup
+# too, when its type matches raises=, so both known-bug tests below expect AssertionError: a slow
+# login (TimeoutException) is then reported as an error, never as the known bug.
 @pytest.fixture
 def error_user_inventory(open_inventory_as):
     return open_inventory_as(ERROR_USER)
@@ -60,11 +60,13 @@ def test_error_user_sorts_products_without_an_error(error_user_inventory):
 
 @pytest.mark.xfail(
     strict=True,
-    raises=TimeoutException,
+    raises=AssertionError,
     reason="BUG-003: as problem_user, Add to cart never works for 3 of the 6 products",
 )
 def test_problem_user_adds_any_product_to_cart(problem_user_inventory):
-    # add_to_cart waits for the button to turn into "Remove"; with the bug it never does.
-    problem_user_inventory.add_to_cart("Sauce Labs Bolt T-Shirt")
+    # Click and confirmation are separate steps: a timeout on the click (a broken locator) fails
+    # the test, and only the missing confirmation counts as BUG-003.
+    inventory = problem_user_inventory.click_add_to_cart("Sauce Labs Bolt T-Shirt")
 
-    assert problem_user_inventory.header.cart_count() == 1
+    assert inventory.is_in_cart("Sauce Labs Bolt T-Shirt")
+    assert inventory.header.cart_count() == 1
