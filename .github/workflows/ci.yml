@@ -36,6 +36,17 @@ jobs:
       - name: Show browser version
         run: google-chrome --version
 
+      # The API under test runs inside the job: no shared instance, no data left by other people.
+      - name: Start ServeRest
+        run: |
+          npx --yes serverest@3.2.2 > serverest.log 2>&1 &
+          for _ in $(seq 1 30); do
+            curl -sf http://localhost:3000/usuarios > /dev/null && exit 0
+            sleep 1
+          done
+          cat serverest.log
+          exit 1
+
       - name: Run tests
         run: uv run pytest
 

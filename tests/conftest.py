@@ -1,16 +1,25 @@
 import os
 import re
-from collections.abc import Iterator
+import shutil
+from collections.abc import Callable, Iterator
 from pathlib import Path
 
 import pytest
 from selenium import webdriver
 from selenium.webdriver.remote.webdriver import WebDriver
 
+from pages.inventory_page import InventoryPage
+from tests.data.users import STANDARD_USER
+
 BASE_URL = os.getenv("BASE_URL", "https://www.saucedemo.com")
 ARTIFACTS_DIR = Path("screenshots")
 
 phase_report_key = pytest.StashKey[dict[str, pytest.TestReport]]()
+
+
+def pytest_sessionstart(session: pytest.Session) -> None:
+    # Evidence left by an earlier run would be mistaken for a failure of this one.
+    shutil.rmtree(ARTIFACTS_DIR, ignore_errors=True)
 
 
 @pytest.hookimpl(wrapper=True, tryfirst=True)
@@ -53,10 +62,33 @@ def driver(request: pytest.FixtureRequest) -> Iterator[WebDriver]:
         drv.quit()
 
 
+@pytest.fixture
+def open_inventory_as(driver: WebDriver, base_url: str) -> Callable[[str], InventoryPage]:
+    # Back door instead of the login form: the site keeps the session in this cookie, so tests
+    # that are not about login start already logged in. Login itself is covered in test_login.py.
+    def _open(username: str) -> InventoryPage:
+        driver.get(base_url)  # a cookie can only be set for the domain that is open
+        driver.add_cookie({"name": "session-username", "value": username})
+        driver.get(f"{base_url}/inventory.html")
+        return InventoryPage(driver)
+
+    return _open
+
+
+@pytest.fixture
+def inventory_page(open_inventory_as: Callable[[str], InventoryPage]) -> InventoryPage:
+    return open_inventory_as(STANDARD_USER)
+
+
 def _failed(item: pytest.Item) -> bool:
     reports = item.stash.get(phase_report_key, {})
     # Setup can fail after the browser is up (e.g. a fixture that logs in), so check both phases.
-    return any(rep.failed for when, rep in reports.items() if when in ("setup", "call"))
+    # An xfail is a known bug failing as expected: its screenshot is the bug's evidence.
+    return any(
+        rep.failed or hasattr(rep, "wasxfail")
+        for when, rep in reports.items()
+        if when in ("setup", "call")
+    )
 
 
 def _save_failure_artifacts(drv: WebDriver, nodeid: str) -> None:
