@@ -69,6 +69,13 @@ O relatório sai em `reports/report.html`.
 2. `id` quando o elemento certo não tem `data-test`. No menu, o `data-test` está no ícone, mas quem recebe o clique é o botão, então o alvo é `id="react-burger-menu-btn"`.
 3. XPath só quando o CSS não alcança, que é ao casar texto: o botão "Add to cart" é encontrado pelo nome do produto do card. Nunca XPath por posição (`/div[3]/...`).
 
+## O que foi descartado e corrigido no caminho
+
+- **Etapa 1 (esqueleto e CI):** antes da primeira linha, o plano foi comparado com boas práticas de Selenium, de desenho de teste e de CI, e só ficou o que resolvia um problema desta suíte. Ficaram de fora, entre outras coisas, Selenium Grid, execução em paralelo, Allure e nova tentativa automática de teste falho.
+- **Etapa 2 (Page Objects, plano de teste e relatórios de bug):** os seletores e as mensagens foram copiados do site ao vivo. Um script exploratório com `time.sleep` apontou defeitos que não existiam; com espera explícita, o resultado mudou (caso descrito no [`TEST_PLAN.md`](TEST_PLAN.md)). Nenhum bug entrou no `BUGS.md` sem ser reproduzido duas vezes. Antes do merge, a revisão do PR pegou dois erros, ambos corrigidos: o BUG-003 dizia "4 dos 6 produtos", mas reproduzindo com uma sessão por produto são 3; e um `xfail` largo demais confundiria um login lento com o bug conhecido.
+- **Etapa 3 (API):** rotas, códigos e mensagens vieram do Swagger do ServeRest, e as asserções rodam contra o servidor real, local e no CI. O schema da lista de usuários *aceita* o campo de senha, que está no contrato, mas não o *exige*: exigir seria tratar o BUG-005 como comportamento correto.
+- **Etapa 4 (acessibilidade):** uma exploração com o axe-core nas páginas do fluxo de compra não achou violação WCAG A nem AA, mas percorrer as mesmas páginas com Tab mostrou que o carrinho nunca recebe foco; reproduzido duas vezes, isso virou o BUG-006. Cada verificação nova foi forçada a falhar uma vez antes do PR: uma imagem sem `alt` injetada na página e o carrinho com `tabindex`, simulando a correção. A mesma etapa mostrou que a correção do `xfail` da Etapa 2 estava incompleta: o teste do BUG-003 ainda esperava `TimeoutException`, a mesma exceção de um login lento, e passou a esperar `AssertionError` (§8 de [`docs/DECISIONS.md`](docs/DECISIONS.md)).
+
 ## O que este repo não cobre
 
 - **Outros navegadores e Selenium Grid:** a fixture tem um ponto só onde o navegador é criado, então Firefox entraria ali. O Grid resolve escala que esta suíte não tem.
